@@ -27,7 +27,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import java.io.IOException;
-
 /**
  * Example of using Button driver for toggling a LED.
  *
@@ -37,11 +36,19 @@ import java.io.IOException;
  * You need to connect an LED and a push button switch to pins specified in {@link BoardDefaults}
  * according to the schematic provided in the sample README.
  */
-public class ButtonActivity extends Activity {
+public class ButtonActivity extends Activity{
+
+
     private static final String TAG = ButtonActivity.class.getSimpleName();
 
     private Gpio mLedGpio;
     private ButtonInputDriver mButtonInputDriver;
+
+    private IotIgniteHandler iotIgniteHandler;
+
+    public int buttonLastState=0;
+    public int ledLastState=0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,16 +69,21 @@ public class ButtonActivity extends Activity {
                     Button.LogicState.PRESSED_WHEN_LOW,
                     KeyEvent.KEYCODE_SPACE);
             mButtonInputDriver.register();
+
         } catch (IOException e) {
             Log.e(TAG, "Error configuring GPIO pins", e);
         }
+
+        //Starting the IotIgniteHandler
+        iotIgniteHandler = IotIgniteHandler.getInstance(ButtonActivity.this,getApplicationContext());
+        iotIgniteHandler.start();
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_SPACE) {
-            // Turn on the LED
-            setLedValue(true);
+            buttonLastState = 1;
+            iotIgniteHandler.mySendData(iotIgniteHandler.buttonThingID);
             return true;
         }
 
@@ -81,8 +93,8 @@ public class ButtonActivity extends Activity {
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_SPACE) {
-            // Turn off the LED
-            setLedValue(false);
+            buttonLastState = 0;
+            iotIgniteHandler.mySendData(iotIgniteHandler.buttonThingID);
             return true;
         }
 
@@ -92,9 +104,15 @@ public class ButtonActivity extends Activity {
     /**
      * Update the value of the LED output.
      */
-    private void setLedValue(boolean value) {
+    public void setLedValue(boolean value) {
         try {
             mLedGpio.setValue(value);
+
+            // Save LED last state to send data to cloud
+            if(value)
+                ledLastState = 1;
+            else
+                ledLastState = 0;
         } catch (IOException e) {
             Log.e(TAG, "Error updating GPIO value", e);
         }
@@ -125,5 +143,7 @@ public class ButtonActivity extends Activity {
             }
             mLedGpio = null;
         }
+
+        iotIgniteHandler.stop();
     }
 }

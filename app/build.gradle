@@ -35,7 +35,19 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repo.iot-ignite.com/content/repositories/releases"
+    }
+}
+
 dependencies {
     compile 'com.google.android.things.contrib:driver-button:0.1'
+
+    compile 'com.ardic.android:IoTIgnite:0.7'
+    compile 'com.google.code.gson:gson:2.7'
+
     provided 'com.google.android.things:androidthings:0.1-devpreview'
+
 }
